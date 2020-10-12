@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Verification Utilite</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+
+    .checklist__auto p {
+      width: 170px;
+    }
+
+    .checklists__counter {
+      display: flex;
+      flex-direction: row;
+      width: 470px;
+    }
+
+    .checklists__counter > div {
+      width: 50%;
+    }
+
+    .counter-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .counter-block>div {
+      display: flex;
+      flex-direction: row;
+      height: 30px;
+      width: 150px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .counter-block button {
+      padding: 3px;
+      display: flex;
+      text-align: center;
+    }
+
+    .counter-block>div>div {
+      display: flex;
+      justify-content: space-between;
+      width: 70px;
+    }
+
+    .counter>h3>img {
+      width: 25px;
+      height: 25px;
+    }
+
+    .counter>h3>img:last-of-type {
+      width: 20px;
+      height: 25px;
+    }
+
+    .counter>h3 {
+      display: flex;
+      justify-content: space-between;
+      width: 70%;
+    }
+
+    .counter-block > div:last-of-type {
+      display: block;
+      margin-top: 40px;
+    }
+
+    .counter-block input {
+      width: 15px;
+      border: none;
+      text-align: center;
+    }
+
+    .counter input::-webkit-outer-spin-button,
+    .counter input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .counter__settings {
+      display: flex;
+      flex-direction: column;
+      width: 220px !important;
+      height: 150px;
+      padding: 5px;
+      font-size: 14px;
+      background-color: white;
+      border: 1px solid #dddddd;
+      border-radius: 5px;
+      position: absolute;
+      z-index: 10;
+    }
+
+    .counter__settings > div {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .counter__settings > div > input {
+      width: 15px;
+      height: 15px;
+    }
+
+    .result {
+    	color: black;
+	  }
+    .result:hover {
+      color: black;
+    }
+
+    .difference {
+      color: green;
+    }
+    
+    .difference:hover ~ .difference__block {
+      display: none;
+    }
+
+    .negativeDifference {
+      color: red;
+    }
+
+    .stats {
+      position: relative;
+    }
+
+    .difference__block {
+      display: none !important;
+      position: absolute;
+      font-size: 12px;
+      top: -10px;
+      left: 60px;
+      z-index: 10;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      background-color: #ffffff;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="check-number">
+      <h3>Проверка номера</h3>
+      <input type="text" v-model="number" v-on:keyup.enter="checkNumber" @focus="$event.target.select()"
+        placeholder="Номер телефона">
+      <p v-show="showError">Введите номер телефона!</p>
+      <input type="submit" @click="checkNumber">
+      <button v-on:click="number='';this.localStorage.number=''">Очистить</button>
+    </div>
+    <div class="check-name">
+      <form @submit="checkSocialNetworks">
+        <h3>Проверка соцсетей</h3>
+        <input type="text" v-model="name" placeholder="ФамилияИмяОтчество" required>
+        <input type="text" v-model="date" placeholder="01.01.1970" v-on:keyup.enter="checkSocialNetworks" type="number"
+          required>
+        <input type="submit">
+      </form>
+      <div class="checklists__counter">
+        <div class="checklists">
+          <h3>Чеклисты</h3>
+          <button @click="openChecklist(0)">A</button>
+          <button @click="openChecklist(1)">B</button>
+          <button @click="openChecklist(2)">C</button>
+          <div class="checklist__auto" v-if="settings.checklists[0].show">
+            <p v-for="elem in settings.checklists[0].lists" :key="elem.value">
+              <input type="checkbox" v-model='elem.checked'>{{elem.value}}
+              <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
+            </p>
+          </div>
+          <div class="checklist__auto" v-if="settings.checklists[1].show">
+            <p v-for="elem in settings.checklists[1].lists" :key="elem.value">
+              <input type="checkbox" v-model='elem.checked'>{{elem.value}}
+              <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
+            </p>
+          </div>
+          <div class="checklist__auto" v-if="settings.checklists[2].show">
+            <p v-for="elem in settings.checklists[2].lists" :key="elem.value">
+              <input type="checkbox" v-model='elem.checked'>{{elem.value}}
+              <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
+            </p>
+          </div>
+          <button @click="clearData();this.location.reload();">Сбросить чеклист</button>
+        </div>
+        <div class="counter">
+          <h3>Счетчик<img src="https://www.flaticon.com/svg/static/icons/svg/709/709612.svg" alt="eye"
+              @click="countersData.showCounter = !countersData.showCounter"><img src="https://www.flaticon.com/svg/static/icons/svg/2099/2099058.svg" alt="cog" @click="countersData.showSettings = !countersData.showSettings"></h3>
+            <div class="counter__settings" v-if="countersData.showSettings">
+              <div><p>Начало смены: </p><select v-model=countersData.hourOfStart>
+                <option>7:00</option>
+                <option>8:00</option>
+                <option>9:00</option>
+              </select></div>
+              <div><p>Кол-во баллов: </p><input type="number" v-model="countersData.requiredQuantity"></div>
+              <div><p>Время не в работе (в минутах): </p><input type="number" v-model="countersData.timeOfChill"></div>
+              <button @click="window.localStorage.clear();this.location.reload()">Сброс приложения</button>
+            </div>
+              <div class="counter-block" v-if="countersData.showCounter">
+            <div v-for="counter in this.countersData.counters">
+              <p>{{counter.type}}</p>
+              <div><button @click="counter.quantity--">-</button><input type="number" v-model="counter.quantity"
+                  @focus="$event.target.select()"><button @click="counter.quantity++">+</button></div>
+            </div>
+          <div class="stats" v-if="finishOfWork">
+            <p class="result">Итого:
+              {{(this.countersData.counters.reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1)}}
+            </p>
+            <p v-if="remainingQuantity > 0">Осталось: {{remainingQuantityPerHour}} балла в час <span class="difference" v-bind:class="{negativeDifference: this.negativeDifference}">({{differenceWithPlanned}})</span> до {{countersData.requiredQuantity}} баллов.</p>
+            <p v-else>План выполнен! Увеличьте план по закрытию.</p>
+            <p v-if="remainingQuantity > 0">На заявку: {{remainingTimeForPoint}}</p>
+            <div class="difference__block">Разница с средней в час ({{(this.countersData.requiredQuantity / (((12 * 60) - this.countersData.timeOfChill) / 60)).toFixed(1)}}) составляет {{differenceWithPlanned}}</div>
+          </div>
+          <div v-else>
+            <p>Итого:
+              {{(this.countersData.counters.reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1)}}</p>
+            <p>Рабочее время закончилось!</p>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    var app = new Vue({
+      el: '#app',
+      data: {
+        number: '',
+        fixedNumber: null,
+        name: '',
+        fixedName: '',
+        date: '',
+        fixedDate: {
+          day: null,
+          month: null,
+          year: null,
+        },
+        showError: false,
+        settings: {
+          checklists: [
+            {name: '1', show: true, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value:'6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            },
+            {name: '2', show: false, lists: [{value: '1',checked: false, showMark: false},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            },
+            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
+            },
+          ],
+          legacyChecklists: [
+          {name: '1', show: true, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value:'6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            },
+            {name: '2', show: false, lists: [{value: '1',checked: false, showMark: false},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            },
+            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
+            },
+            ],
+        },
+          countersData: {
+          counters: 
+            [{type: '1', quantity: 0, value: 1},
+            {type: '2', quantity: 0, value: 1.6},
+            {type: '3', quantity: 0, value: 0.3},
+            {type: '4', quantity: 0, value: 0.8},
+            {type: '5', quantity: 0, value: 1},
+            {type: '6', quantity: 0, value: 0.4}],
+          showCounter: true,
+          showSettings: false,
+          requiredQuantity: '30',
+          hourOfStart: '7:00',
+          timeOfChill: 60,
+      },
+      },
+      watch: {
+        fixedNumber(newNumber) {
+          localStorage.number = newNumber;
+        },
+        'settings': {
+          handler: (settings) => {
+            let localSets = JSON.parse(localStorage.settings);
+            localStorage.removeItem('settings');
+            localSets = settings;
+            localStorage.setItem('settings', JSON.stringify(localSets));
+          },
+          deep: true,
+        },
+        'countersData': {
+          handler: (counters) => {
+            let local = JSON.parse(localStorage.countersData);
+            localStorage.removeItem('countersData');
+            local = counters;
+            localStorage.setItem('countersData', JSON.stringify(local));
+          },
+          deep: true,
+        },
+      },
+      computed: {
+        fixedStartOfWork: function () {
+          return (+this.countersData.hourOfStart.slice(0, 1));
+        },
+        finishOfWork: function () {
+          return +new Date() < new Date().setHours(this.fixedStartOfWork + 12, 0, 0, 0);
+        },
+        remainingQuantity: function () {
+          return (this.countersData.requiredQuantity - this.countersData.counters
+            .reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1);
+        },
+        remainingQuantityPerHour: function () {
+          const day = new Date();
+          const now = Math.abs((day.setHours(this.fixedStartOfWork, 0, 0, 0) - +new Date()));
+          const timeOfWork = new Date(day).setHours(this.fixedStartOfWork) - new Date(day).setHours(this.fixedStartOfWork - 12) - (this.countersData.timeOfChill * 1000 * 60);
+          const remainingQuantityOfPoints = (this.countersData.requiredQuantity - this.countersData.counters
+            .reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1);
+          if (new Date().getHours() >= this.fixedStartOfWork + 12) {
+            return 0
+          } else
+           return (remainingQuantityOfPoints / ((timeOfWork / 1000 / 60 / 60) - (now / 1000 / 60 / 60))).toFixed(1);
+          },
+        remainingTimeForPoint: function () {
+          const time = (((new Date().setHours(this.fixedStartOfWork + 12, 0, 0, 0) - +new Date) / 1000 / 60) / this.remainingQuantity).toFixed(1);
+          if (time >= 60) {
+            if (time / 60 >= 1) {
+              return "больше часа"
+            }
+          }
+          return `${time} мин.`;
+        },
+        differenceWithPlanned: function () {
+          const difference = (this.remainingQuantityPerHour - (this.countersData.requiredQuantity / (((12 * 60) - this.countersData.timeOfChill) / 60))).toFixed(1);
+          if (difference > 0) {
+            return `+${difference}`;
+          } return difference;
+        },
+        negativeDifference: function() {
+          return this.differenceWithPlanned > 0;
+        },
+      },
+      methods: {
+        checkNumber() {
+          this.showError = false;
+          if (this.number) {
+          this.number = this.number.match(/\d/g).join('');
+          if (isNaN(this.number)) {
+            this.showError = true;
+          } else if (this.number.length !== 11 && this.number.length !== 10 && this.number.length !== 12) {
+            this.showError = true;
+          } else {
+            this.fixedNumber = this.number.match(/\d/g).join('');
+            if (this.fixedNumber.length == 11) {
+              this.fixedNumber = '7' + this.fixedNumber.slice(1);
+            } else this.fixedNumber = '7' + this.fixedNumber;
+            window.open(`https://yandex.ru/search/?text=%2B${this.fixedNumber}`);
+            window.open(`https://yandex.ru/search/?text=${this.fixedNumber}`);
+            window.open(`https://yandex.ru/search/?text=${this.fixedNumber.replace(/7/, "8")}`);
+          }
+          };
+        },
+        fixName() {
+          this.fixedName = null;
+          const regexp = /([А-Я])/g;
+          this.name = this.name.trim();
+          if (/ /g.test(this.name)) {
+            if (this.name.match(/ /g).length == 2) {
+              this.fixedName = this.name.slice(0, this.name.lastIndexOf(' '));
+            } else if (this.name.match(/ /g).length == 1) {
+              this.fixedName = this.name;
+            }
+          } else {
+            this.fixedName = this.name.replace(/([А-Я])/g, ' $1').trim();
+          }
+          this.fixedName = this.fixedName.split(' ');
+          this.fixedName = this.fixedName[1] + ' ' + this.fixedName[0];
+          console.log(this.fixedName);
+        },
+        fixDate() {
+          const date = this.date.split(/[.,\/ -]/);
+          this.fixedDate.day = date[0];
+          this.fixedDate.month = date[1];
+          this.fixedDate.year = date[2];
+        },
+        checkSocialNetworks() {
+          this.fixName();
+          this.fixDate();
+          window.open(
+            `https://ok.ru/dk?st.cmd=searchResult&st.mode=Users&st.query=${this.fixedName}&st.bthDay=${this.fixedDate.day}&st.bthMonth=${this.fixedDate.month-1}&st.bthYear=${this.fixedDate.year}`
+            );
+          window.open(
+            `https://vk.com/search?c%5Bbday%5D=${this.fixedDate.day}&c%5Bbmonth%5D=${this.fixedDate.month}&c%5Bbyear%5D=${this.fixedDate.year}&c%5Bname%5D=1&c%5Bper_page%5D=40&c%5Bphoto%5D=1&c%5Bq%5D=${this.fixedName}&c%5Bsection%5D=people`
+            );
+          window.open(`https://www.linkedin.com/search/results/people/?keywords=${this.fixedName}`);
+        },
+        openChecklist(buttonValue) {
+          this.settings.checklists.forEach(element => {
+            if (this.settings.checklists.indexOf(element) === buttonValue) {
+              element.show = true;
+            } else element.show = false;
+          });
+        },
+        clearData() {
+          let data = JSON.parse(localStorage.settings);
+          data.checklists = this.settings.legacyChecklists;
+          localStorage.setItem('settings', JSON.stringify(data))
+        }
+      },
+      mounted() {
+        if (localStorage.number) {
+          this.number = localStorage.number;
+        };
+        if (localStorage.settings) {
+          this.settings = JSON.parse(localStorage.getItem('settings'));
+        } else {
+          const settings = this.settings;
+          localStorage.setItem('settings', JSON.stringify(settings));
+        };
+        if (localStorage.countersData) {
+          this.countersData = JSON.parse(localStorage.getItem('countersData'));
+        } else {
+          const data = this.countersData;
+          localStorage.setItem('countersData', JSON.stringify(data));
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
