@@ -12,6 +12,12 @@
 
     .checklist__auto p {
       width: 170px;
+      -webkit-user-select: none;
+    }
+
+    .checklist__auto p:hover {
+      font-weight: 800;
+      cursor: pointer;
     }
 
     .checklists__counter {
@@ -21,11 +27,12 @@
     }
 
     .checklists__counter > div {
-      width: 50%;
+      width: 47%;
     }
 
     .counter-block {
       display: flex;
+      position: relative;
       flex-direction: column;
     }
 
@@ -33,7 +40,7 @@
       display: flex;
       flex-direction: row;
       height: 30px;
-      width: 150px;
+      width: 180px;
       align-items: center;
       justify-content: space-between;
     }
@@ -53,6 +60,7 @@
     .counter>h3>img {
       width: 25px;
       height: 25px;
+      cursor: pointer;
     }
 
     .counter>h3>img:last-of-type {
@@ -87,7 +95,7 @@
       display: flex;
       flex-direction: column;
       width: 220px !important;
-      height: 150px;
+      height: 260px;
       padding: 5px;
       font-size: 14px;
       background-color: white;
@@ -109,8 +117,21 @@
       height: 15px;
     }
 
+    .counter__settings > div > button {
+      width: 100px;
+      height: 30px;
+      margin: 2px 0;
+      font-size: 10px;
+    }
+
+    .counter__settings-instruction > p {
+      margin: 10px auto;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
     .result {
-    	color: black;
+    	color: white;
 	  }
     .result:hover {
       color: black;
@@ -118,10 +139,6 @@
 
     .difference {
       color: green;
-    }
-    
-    .difference:hover ~ .difference__block {
-      display: none;
     }
 
     .negativeDifference {
@@ -132,18 +149,6 @@
       position: relative;
     }
 
-    .difference__block {
-      display: none !important;
-      position: absolute;
-      font-size: 12px;
-      top: -10px;
-      left: 60px;
-      z-index: 10;
-      border: 1px solid #cccccc;
-      border-radius: 5px;
-      background-color: #ffffff;
-    }
-
   </style>
 </head>
 
@@ -151,11 +156,13 @@
   <div id="app">
     <div class="check-number">
       <h3>Проверка номера</h3>
+      <form @submit.prevent="checkNumber">
       <input type="text" v-model="number" v-on:keyup.enter="checkNumber" @focus="$event.target.select()"
-        placeholder="Номер телефона">
-      <p v-show="showError">Введите номер телефона!</p>
-      <input type="submit" @click="checkNumber">
+        placeholder="Номер телефона" required>
+      <input type="submit">
       <button v-on:click="number='';this.localStorage.number=''">Очистить</button>
+      <p v-show="showError">Введите номер телефона!</p>
+    </form>
     </div>
     <div class="check-name">
       <form @submit="checkSocialNetworks">
@@ -166,30 +173,30 @@
         <input type="submit">
       </form>
       <div class="checklists__counter">
-        <div class="checklists">
+        <div class="checklists" v-if="settings.showChecklists">
           <h3>Чеклисты</h3>
-          <button @click="openChecklist(0)">A</button>
-          <button @click="openChecklist(1)">B</button>
-          <button @click="openChecklist(2)">C</button>
+          <button @click="openChecklist(0)">1</button>
+          <button @click="openChecklist(1)">2</button>
+          <button @click="openChecklist(2)">3</button>
           <div class="checklist__auto" v-if="settings.checklists[0].show">
-            <p v-for="elem in settings.checklists[0].lists" :key="elem.value">
+            <p class="checklist__auto-element" v-for="elem in settings.checklists[0].lists" :key="elem.value" @click="elem.checked = !elem.checked">
               <input type="checkbox" v-model='elem.checked'>{{elem.value}}
               <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
             </p>
           </div>
           <div class="checklist__auto" v-if="settings.checklists[1].show">
-            <p v-for="elem in settings.checklists[1].lists" :key="elem.value">
+            <p class="checklist__auto-element" v-for="elem in settings.checklists[1].lists" :key="elem.value"  @click="elem.checked = !elem.checked">
               <input type="checkbox" v-model='elem.checked'>{{elem.value}}
               <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
             </p>
           </div>
           <div class="checklist__auto" v-if="settings.checklists[2].show">
-            <p v-for="elem in settings.checklists[2].lists" :key="elem.value">
+            <p class="checklist__auto-element" v-for="elem in settings.checklists[2].lists" :key="elem.value"  @click="elem.checked = !elem.checked">
               <input type="checkbox" v-model='elem.checked'>{{elem.value}}
               <img src="https://www.flaticon.com/svg/static/icons/svg/179/179386.svg" style="width: 12px;" alt="mark" v-if="!elem.checked && elem.showMark">
             </p>
           </div>
-          <button @click="clearData();this.location.reload();">Сбросить чеклист</button>
+          <button @click="clearData('checklist');">Сбросить чеклист</button>
         </div>
         <div class="counter">
           <h3>Счетчик<img src="https://www.flaticon.com/svg/static/icons/svg/709/709612.svg" alt="eye"
@@ -200,24 +207,31 @@
                 <option>8:00</option>
                 <option>9:00</option>
               </select></div>
-              <div><p>Кол-во баллов: </p><input type="number" v-model="countersData.requiredQuantity"></div>
-              <div><p>Время не в работе (в минутах): </p><input type="number" v-model="countersData.timeOfChill"></div>
-              <button @click="window.localStorage.clear();this.location.reload()">Сброс приложения</button>
+              <div><p>Кол-во баллов: </p><input type="number" v-model="countersData.requiredQuantity" min="0"></div>
+              <div><p>Время не в работе (в минутах): </p><input type="number" v-model="countersData.timeOfChill" min="0" max="100"></div>
+              <div><p>Показывать чеклисты</p><input type="checkbox" v-model="settings.showChecklists"></div>
+              <div><button @click="clearData('counters')">Очистить счетчик</button>
+              <button @click="this.localStorage.clear(); this.location.reload();">Сброс данных</button>
+              </div>
             </div>
               <div class="counter-block" v-if="countersData.showCounter">
             <div v-for="counter in this.countersData.counters">
               <p>{{counter.type}}</p>
-              <div><button @click="counter.quantity--">-</button><input type="number" v-model="counter.quantity"
-                  @focus="$event.target.select()"><button @click="counter.quantity++">+</button></div>
+              <div>
+                <button @click="changeQuantity('-', counter)">-</button>
+                <input type="number" 
+                  v-model="counter.quantity"
+                  @focus="$event.target.select()"
+                  min="0">
+                  <button @click="changeQuantity('+', counter)">+</button></div>
             </div>
           <div class="stats" v-if="finishOfWork">
             <p class="result">Итого:
               {{(this.countersData.counters.reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1)}}
             </p>
-            <p v-if="remainingQuantity > 0">Осталось: {{remainingQuantityPerHour}} балла в час <span class="difference" v-bind:class="{negativeDifference: this.negativeDifference}">({{differenceWithPlanned}})</span> до {{countersData.requiredQuantity}} баллов.</p>
+            <p v-if="remainingQuantity > 0" class="">Осталось: {{remainingQuantityPerHour}} балла в час <span class="difference" v-bind:class="{negativeDifference: this.negativeDifference}">({{differenceWithPlanned}})</span> до {{countersData.requiredQuantity}} баллов.</p>
             <p v-else>План выполнен! Увеличьте план по закрытию.</p>
             <p v-if="remainingQuantity > 0">На заявку: {{remainingTimeForPoint}}</p>
-            <div class="difference__block">Разница с средней в час ({{(this.countersData.requiredQuantity / (((12 * 60) - this.countersData.timeOfChill) / 60)).toFixed(1)}}) составляет {{differenceWithPlanned}}</div>
           </div>
           <div v-else>
             <p>Итого:
@@ -250,17 +264,18 @@
             },
             {name: '2', show: false, lists: [{value: '1',checked: false, showMark: false},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
             },
-            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
+            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: false},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
             },
           ],
           legacyChecklists: [
-          {name: '1', show: true, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value:'6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            {name: '1', show: true, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value:'6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
             },
-            {name: '2', show: false, lists: [{value: '1',checked: false, showMark: false},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
+            {name: '2', show: false, lists: [{value: '1',checked: false, showMark: false},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: false},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: true},{value: '7',checked: false, showMark: false},{value: '8',checked: false, showMark: false}]
             },
-            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: true},{value: '3',checked: false, showMark: true},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
+            {name: '3', show: false, lists: [{value: '1',checked: false, showMark: true},{value: '2',checked: false, showMark: false},{value: '3',checked: false, showMark: false},{value: '4',checked: false, showMark: true},{value: '5',checked: false, showMark: false},{value: '6',checked: false, showMark: false}]
             },
             ],
+            showChecklists: true,
         },
           countersData: {
           counters: 
@@ -272,9 +287,9 @@
             {type: '6', quantity: 0, value: 0.4}],
           showCounter: true,
           showSettings: false,
-          requiredQuantity: '30',
+          requiredQuantity: 30,
           hourOfStart: '7:00',
-          timeOfChill: 60,
+          timeOfChill: 90,
       },
       },
       watch: {
@@ -283,15 +298,28 @@
         },
         'settings': {
           handler: (settings) => {
-            let localSets = JSON.parse(localStorage.settings);
+            let local = JSON.parse(localStorage.settings);
             localStorage.removeItem('settings');
-            localSets = settings;
-            localStorage.setItem('settings', JSON.stringify(localSets));
+            local = settings;
+            localStorage.setItem('settings', JSON.stringify(local));
           },
           deep: true,
         },
         'countersData': {
           handler: (counters) => {
+            counters.counters.forEach(counter => {
+              if (counter.quantity < 0) {
+                return counter.quantity = 0;
+              }
+            });
+            if (counters.requiredQuantity < 0) {
+              return counters.requiredQuantity = 0;
+            }
+            if (counters.timeOfChill < 0) {
+              return counters.timeOfChill = 0;
+            } else if (counters.timeOfChill > 100) {
+              return counters.timeOfChill = 100
+            }
             let local = JSON.parse(localStorage.countersData);
             localStorage.removeItem('countersData');
             local = counters;
@@ -319,11 +347,12 @@
             .reduce((accumulator, current) => +accumulator + current.quantity * current.value, 0)).toFixed(1);
           if (new Date().getHours() >= this.fixedStartOfWork + 12) {
             return 0
-          } else
-           return (remainingQuantityOfPoints / ((timeOfWork / 1000 / 60 / 60) - (now / 1000 / 60 / 60))).toFixed(1);
+          } else if (new Date().getHours() >= this.fixedStartOfWork + 11) {
+            return remainingQuantityOfPoints;
+          } else return (remainingQuantityOfPoints / ((timeOfWork / 1000 / 60 / 60) - (now / 1000 / 60 / 60))).toFixed(1);
           },
         remainingTimeForPoint: function () {
-          const time = (((new Date().setHours(this.fixedStartOfWork + 12, 0, 0, 0) - +new Date) / 1000 / 60) / this.remainingQuantity).toFixed(1);
+          const time = (((new Date().setHours(this.fixedStartOfWork + 12, 0, 0, 0) - +new Date - (this.countersData.timeOfChill * 1000 * 60)) / 1000 / 60) / this.remainingQuantity).toFixed(1);
           if (time >= 60) {
             if (time / 60 >= 1) {
               return "больше часа"
@@ -344,14 +373,12 @@
       methods: {
         checkNumber() {
           this.showError = false;
+          this.number = this.number.replace(/\D/g, '');
           if (this.number) {
-          this.number = this.number.match(/\d/g).join('');
-          if (isNaN(this.number)) {
-            this.showError = true;
-          } else if (this.number.length !== 11 && this.number.length !== 10 && this.number.length !== 12) {
-            this.showError = true;
-          } else {
-            this.fixedNumber = this.number.match(/\d/g).join('');
+            if (this.number.length !== 11 && this.number.length !== 10 && this.number.length !== 12) {
+              this.showError = true;
+            } else {
+                this.fixedNumber = this.number;
             if (this.fixedNumber.length == 11) {
               this.fixedNumber = '7' + this.fixedNumber.slice(1);
             } else this.fixedNumber = '7' + this.fixedNumber;
@@ -359,7 +386,7 @@
             window.open(`https://yandex.ru/search/?text=${this.fixedNumber}`);
             window.open(`https://yandex.ru/search/?text=${this.fixedNumber.replace(/7/, "8")}`);
           }
-          };
+          } else this.showError = true;
         },
         fixName() {
           this.fixedName = null;
@@ -384,6 +411,16 @@
           this.fixedDate.month = date[1];
           this.fixedDate.year = date[2];
         },
+        changeQuantity(action, counter) {
+          if (action === '+') {
+            this.clearData('checklist');
+            return counter.quantity++;
+          } else if (action === '-') {
+            if (counter.quantity !== 0) {
+              return counter.quantity--;
+            }
+          }
+        },
         checkSocialNetworks() {
           this.fixName();
           this.fixDate();
@@ -401,12 +438,25 @@
               element.show = true;
             } else element.show = false;
           });
+          this.settings.legacyChecklists.forEach(element => {
+            if (this.settings.legacyChecklists.indexOf(element) === buttonValue) {
+              element.show = true;
+            } else element.show = false;
+          });
         },
-        clearData() {
+        clearData(data) {
+          if (data === 'checklist') {
           let data = JSON.parse(localStorage.settings);
           data.checklists = this.settings.legacyChecklists;
           localStorage.setItem('settings', JSON.stringify(data))
-        }
+          this.settings = JSON.parse(localStorage.getItem('settings'));
+          } else if (data === 'counters') {
+            let data = JSON.parse(localStorage.countersData);
+            data.counters.forEach((counter) => counter.quantity = 0);
+            localStorage.setItem('countersData', JSON.stringify(data));
+            this.countersData = JSON.parse(localStorage.getItem('countersData'))
+          }
+        },
       },
       mounted() {
         if (localStorage.number) {
